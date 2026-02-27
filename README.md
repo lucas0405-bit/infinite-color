@@ -1,2 +1,0 @@
-# infinite-color
-infinite-color
