@@ -1,50 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>🌈 無盡色彩</title>
     <style>
-        /* 1. 把背景設為最後一次出現的顏色，而不是黑色，這樣閃爍就不明顯 */
+        /* 解決閃爍核心：讓 body 背景隨時準備好顏色，不要是黑的 */
         body, html { 
             margin: 0; 
             padding: 0; 
-            background: hsl(0, 70%, 50%); 
-            transition: background 0.5s; /* 背景色跟著變，消滅黑色斷層 */
+            background: hsl(0, 80%, 55%); 
+            overflow-x: hidden; 
+            -webkit-overflow-scrolling: touch; 
         }
-        .block { 
-            height: 100vh; 
-            width: 100vw; 
-            contain: paint; /* 優化效能：告訴瀏覽器這塊只管畫色塊 */
+        .color-block {
+            height: 100vh;
+            width: 100vw;
+            /* 效能優化：讓瀏覽器預先計算渲染 */
+            will-change: background;
+            contain: paint;
         }
     </style>
 </head>
 <body>
-    <div id="app"></div>
+    <div id="container"></div>
     <script>
-        let h = 0;
-        const app = document.getElementById('app');
-
-        function add(count = 5) {
-            for(let i=0; i < count; i++) {
-                const d = document.createElement('div');
-                d.className = 'block';
-                const currentColor = `hsl(${h}, 70%, 50%)`;
-                d.style.backgroundColor = currentColor;
-                app.appendChild(d);
+        let hue = 0;
+        const container = document.getElementById('container');
+        
+        function addBlocks(count = 10) { // 每次增加多一點，增加緩衝
+            for(let i = 0; i < count; i++) {
+                const div = document.createElement('div');
+                div.className = 'color-block';
+                const color = `hsl(${hue}, 80%, 55%)`;
+                const nextColor = `hsl(${(hue + 20) % 360}, 80%, 55%)`;
                 
-                // 2. 同步更新 body 背景色，萬一滑太快，底下漏出來的也是當前色系
-                document.body.style.backgroundColor = currentColor;
-                h = (h + 25) % 360;
+                div.style.background = `linear-gradient(180deg, ${color}, ${nextColor})`;
+                container.appendChild(div);
+                
+                // 關鍵：讓 body 的底色跟著最後一個色塊走
+                document.body.style.backgroundColor = nextColor;
+                hue = (hue + 20) % 360;
             }
         }
 
-        // 3. 初始多載入一點，預留緩衝空間
-        add(15); 
+        // 初始載入 20 個，讓你有很長的緩衝空間
+        addBlocks(20);
 
         window.onscroll = () => {
-            // 4. 提早觸發：原本是快到底才加，現在改成「距離底部還有 2 個螢幕高度」就加
-            if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - (window.innerHeight * 2)) {
-                // 使用 requestAnimationFrame 讓渲染更絲滑
-                window.requestAnimationFrame(() => add(5));
+            // 提早觸發：距離底部還有 2000px 就開始蓋新樓層
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2000) {
+                // 使用 requestAnimationFrame 確保在螢幕更新率同步時執行，減少掉幀
+                window.requestAnimationFrame(() => addBlocks(5));
             }
         };
     </script>
